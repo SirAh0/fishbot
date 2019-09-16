@@ -1,10 +1,44 @@
+;----------------------------------------------------------[ SETTINGS ]---
+;
+; - tried to catch a fish, nothing attached
+NO_FISH_ATTACHED_X 			:= 1155
+NO_FISH_ATTACHED_Y 			:= 209
+NO_FISH_ATTACHED_COLOR 		:= 0x00ffff
+BAUBLE_DURATION 			:= 15 ;- minutes
+
+; - click grid settings
+START_FISH_X 				:= 550
+START_FISH_Y 				:= 100
+CLICK_GRID_WIDTH 			:= 15
+CLICK_GRID_HEIGHT 			:= 6
+CLICK_GRID_OFFSET_X 		:= 50
+CLICK_GRID_OFFSET_Y 		:= 50
+
+; - caught a fish and loot box is open
+LOOT_X 		:= 1155
+LOOT_Y 		:= 209
+LOOT_COLOR 	:= 0x000000
+
+; - Keybinds
+CAST_LINE_KEY  := "f"
+
+
+
+; -----------------------------------------------------------[ KEY EVENTS ]---
 Esc::ExitApp
 
 ^1::
 	MainLoop()
 return
 
+
+
+; ------------------------------------------------------------[ MainLoop ]---
+;
 MainLoop() {
+
+	; TODO apply bauble and start timer for next application;
+	;
 
 	; start looping right clicks	
 	while true {
@@ -16,38 +50,56 @@ MainLoop() {
 		; don't ever stop trying!
 	}
 
-	; re-apply bauble event timer
+	; TODO: re-apply bauble event timer
 	;
 }
 
+; ------------------------------------------------------------[ CastLine ]---
+;
 CastLine() {
-	Send f
+	global
+	Send %CAST_LINE_KEY%
 }
 
-; after every right click, possible capture
-; if yellow error text appears, Break and CastLine
-TestForColor() {
-	; loop over the specific area whre the error message appears	
-	PixelGetColor, color, %MouseX%, %MouseY%
-	MsgBox The color at the current cursor position is %color%.	
+;-----------------------------------------------------------[ ApplyBauble ]---
+;	TODO
+ApplyBauble(){
+
 }
 
-RunClickGrid() {
-	sx := 250	; start coords
-	sy := 100
-	w := 15		; grid width, height
-	h := 6
-    ox := 90	; offset mouse move
-    oy := 90
+; ---------------------------------------------------------[ TestForColor ]---
+; Look at a pixel at x,y coordinate and test if it is the same Color
+; TargetColor(RGB): 0x000000
+;
+TestForColor(x, y, TargetColor) {	
+	PixelGetColor, color, %x%, %y%
+	if ( color == TargetColor )
+		return true
+	else
+		return false	
+}
 
-	Loop, %w% {
-		x := (A_Index*ox)+sx
-		Loop, %h% {	
-			y := (A_Index*oy)+sy
+; ---------------------------------------------------------[ RunClickGrid ]---
+;
+RunClickGrid() {	
+	global 
+
+	Loop, %CLICK_GRID_WIDTH% {
+		x := (A_Index*CLICK_GRID_OFFSET_X)+START_FISH_X
+		Loop, %CLICK_GRID_HEIGHT% {	
+			y := (A_Index*CLICK_GRID_OFFSET_Y)+START_FISH_Y
 			MouseMove, x, y			
 			Send +{Click, right}
 			; Click, right	
-			Sleep, 45
-		}		
+			Sleep, 200
+
+			; see if this attempt found no fish (yellow error text)
+			if ( TestForColor( 	NO_FISH_ATTACHED_X, NO_FISH_ATTACHED_Y,NO_FISH_ATTACHED_COLOR) ) 
+				return
+
+			; see if this attempt found a fish (loot window)
+			if ( TestForColor( LOOT_X, LOOT_Y, LOOT_COLOR ) ) 
+				return				
+		}
 	}
 }
