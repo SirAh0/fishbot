@@ -7,12 +7,12 @@ NO_FISH_ATTACHED_COLOR 		:= 0x00ffff
 BAUBLE_DURATION 			:= 15 ;- minutes
 
 ; - click grid settings
-START_FISH_X 				:= 550
-START_FISH_Y 				:= 100
-CLICK_GRID_WIDTH 			:= 15
-CLICK_GRID_HEIGHT 			:= 6
-CLICK_GRID_OFFSET_X 		:= 50
-CLICK_GRID_OFFSET_Y 		:= 50
+CG_START_X			:= 550
+CG_START_Y			:= 100
+CG_WIDTH 			:= 15
+CG_HEIGHT 			:= 6
+CG_OFFSET_X 		:= 50
+CG_OFFSET_Y 		:= 50
 
 ; - caught a fish and loot box is open
 LOOT_X 		:= 1155
@@ -84,17 +84,16 @@ TestForColor(x, y, TargetColor) {
 RunClickGrid() {	
 	global 
 
-	Loop, %CLICK_GRID_WIDTH% {
-		x := (A_Index*CLICK_GRID_OFFSET_X)+START_FISH_X
-		Loop, %CLICK_GRID_HEIGHT% {	
-			y := (A_Index*CLICK_GRID_OFFSET_Y)+START_FISH_Y
+	Loop, %CG_WIDTH% {
+		x := (A_Index*CG_OFFSET_X)+CG_START_X
+		Loop, %CG_HEIGHT% {	
+			y := (A_Index*CG_OFFSET_Y)+CG_START_Y
 			MouseMove, x, y			
 			Send +{Click, right}
-			; Click, right	
 			Sleep, 200
 
 			; see if this attempt found no fish (yellow error text)
-			if ( TestForColor( 	NO_FISH_ATTACHED_X, NO_FISH_ATTACHED_Y,NO_FISH_ATTACHED_COLOR) ) 
+			if ( TestForColor( NO_FISH_ATTACHED_X, NO_FISH_ATTACHED_Y,NO_FISH_ATTACHED_COLOR) ) 
 				return
 
 			; see if this attempt found a fish (loot window)
