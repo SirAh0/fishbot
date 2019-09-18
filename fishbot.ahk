@@ -114,9 +114,6 @@ RunClickGrid() {
 ;
 MainLoop() {
 	global
-	; TODO apply bauble and start timer for next application;
-	;
-
 	; start looping right clicks	
 	while true {
 		
@@ -137,9 +134,6 @@ MainLoop() {
 
 		; don't ever stop trying!
 	}
-
-	; TODO: re-apply bauble event timer
-	;
 }
 
 ; -----------------------------------------------------------[ KEY EVENTS ]---
@@ -147,9 +141,6 @@ Esc::ExitApp
 
 ; ctrl+1
 ^1::
-	; MouseGetPos, x, y
-	; MsgBox, %x%, %y%
-
 	; - equip fishing pole
 	Send %EQUIP_FISHING_POLE_KEY%
 	Sleep, 1000
