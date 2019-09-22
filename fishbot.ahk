@@ -54,7 +54,7 @@ LOOK_FOR_FISH_ON_LURE_TIMER_RUNNING := false
 CastLine() {
 	global	
 	Send %CAST_LINE_KEY%
-	Sleep, 1500	
+	Sleep, 3000 	;- give the animation time to finish	
 }
 
 CollectFoundFish() {
