@@ -43,12 +43,18 @@ NO_FISH_ATTACHED_COLOR 		:= 0x00ffff
 LOOT_COLOR 					:= 0x000000
 FISH_ON_LURE_COLOR 			:= 0xFEFEFE
 
+; - looking for fish timers
+LOOK_FOR_LURE_DURATION 		  		:= 30 ;- seconds
+LOOK_FOR_FISH_ON_LURE_DURATION 		:= 30 ;- seconds
+LOOK_FOR_LURE_TIMER_RUNNING	    	:= false
+LOOK_FOR_FISH_ON_LURE_TIMER_RUNNING := false
 
 ; ------------------------------------------------------------[ CastLine ]---
 ;
 CastLine() {
 	global	
 	Send %CAST_LINE_KEY%
+	Sleep, 1500	
 }
 
 CollectFoundFish() {
@@ -124,12 +130,23 @@ RunClickGrid() {
 	}
 }
 
+LookForFishOnLureTimeoutEventCallback(){
+	global
+	LOOK_FOR_FISH_ON_LURE_TIMER_RUNNING = false
+}
+
 ; --------------------------------------------------------[ LookForFishOnLure ]
 ;- TODO: add timetout function
 ;	 wait for fish to bite
 LookForFishOnLure(x,y) {
 	global
-	while true {
+
+	;- start timer if no lure is found start sequence over
+	LOOK_FOR_FISH_ON_LURE_TIMER_RUNNING = true
+	TimeoutDuration := (1000*LOOK_FOR_FISH_ON_LURE_DURATION)
+	SetTimer, LookForFishOnLureTimeoutEventCallback, %TimeoutDuration%
+
+	while %LOOK_FOR_FISH_ON_LURE_TIMER_RUNNING% {
 
 		sx  := x-BAUBLE_BOX_X_OFFSET
 		sy  := y-BAUBLE_BOX_Y_OFFSET
@@ -144,15 +161,11 @@ LookForFishOnLure(x,y) {
 		
 		if ( ErrorLevel = 0 ) {
 			Sleep, 500
-			CollectFoundFish()		
+			CollectFoundFish()
+			SetTimer, LookForFishOnLureTimeoutEventCallback, Off
 			Sleep, 1000	
 			return
-		}
-
-		Sleep, 250
-
-		;- check timer callback flag for exit
-		; return
+		}		
 	}
 }
 
@@ -164,37 +177,46 @@ LocateLureByPixel() {
 	
 	PixelSearch, x, y, 600,300,1650,650, FISHING_LURE_MATCH_COLOR, 10, Fast
 
-	 if ErrorLevel = 2
-	 	return error 2
-	 if ErrorLevel = 1
-	 	return error 1
+	if ErrorLevel = 2
+		return 0
+	if ErrorLevel = 1
+	 	return 0
 	if ErrorLevel = 0
 		return [x,y]
 }
 
+LookForLureTimeoutEventCallback(){
+	global
+	LOOK_FOR_LURE_TIMER_RUNNING = false		
+}
 
 ;---------------------------------------------------------[ LookForLure ]---
 ;
 LookForLure(){
+	global
 
-	while true {
-		m  := LocateLureByPixel()
+	;- start timer if no lure is found start sequence over
+	LOOK_FOR_LURE_TIMER_RUNNING = true
+	TimeoutDuration := (1000*LOOK_FOR_LURE_DURATION)
+	SetTimer, LookForLureTimeoutEventCallback, %TimeoutDuration%
 
-		; MsgBox m:%m%
-		
+	while %LOOK_FOR_LURE_TIMER_RUNNING% {
+
+		m  := LocateLureByPixel() 
 		if ( m ){
 			mx := m[1]
 			my := m[2]
-			MouseMove, %mx%, %my%					
-			LookForFishOnLure(mx,my)	
+			MouseMove, %mx%, %my%			
+			LookForFishOnLure(mx,my)
+			;- disable running timer
+			SetTimer, LookForLureTimeoutEventCallback, Off
 			return
 		}			
 
-		;- timer ran out
-		;return				
 		Sleep, 250
 	}
 }
+
 
 ;------------------------------------------------------------[ MainLoop ]---
 ; TODO: add timetout function
@@ -213,10 +235,9 @@ MainLoop() {
 		} else {
 			
 			CastLine()
-			Sleep, 3000	
-
-			LookForLure()
-			Sleep, 1000
+			
+			LookForLure()			
+			Sleep, 1000 ;- wait one second for GCD 
 		}
 
 		; don't ever stop trying!
@@ -231,7 +252,9 @@ MsgBoxPixelAtMouse(){
 	MsgBox %Color%	
 }
 
-
+SayHi(){
+	MsgBox, hi
+}
 
 ; -----------------------------------------------------------[ KEY EVENTS ]---
 Esc::ExitApp
@@ -241,15 +264,15 @@ Esc::ExitApp
 	; MsgBoxPixelAtMouse()
 
 	; - equip fishing pole
-	Send %EQUIP_FISHING_POLE_KEY%
-	Sleep, 1000
+	; Send %EQUIP_FISHING_POLE_KEY%
+	; Sleep, 1000
 
 	; - apply first bauble
-	ApplyBauble()
+	; ApplyBauble()
 
 	; - set bauble refresh timer
-	Duration := (1000*60*11)
-	SetTimer, ApplyBaubleTimerEventCallback, %Duration%
+	; Duration := (1000*60*11)
+	; SetTimer, ApplyBaubleTimerEventCallback, %Duration%
 	
 	; - start fishing
 	MainLoop()	
