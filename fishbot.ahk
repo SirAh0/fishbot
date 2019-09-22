@@ -162,8 +162,9 @@ LookForFishOnLure(x,y) {
 		if ( ErrorLevel = 0 ) {
 			Sleep, 500
 			CollectFoundFish()
+			Sleep, 1000
 			SetTimer, LookForFishOnLureTimeoutEventCallback, Off
-			Sleep, 1000	
+			Sleep, 1500	
 			return
 		}		
 	}
