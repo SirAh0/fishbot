@@ -3,7 +3,6 @@
 ; - tried to catch a fish, nothing attached
 NO_FISH_ATTACHED_X 			:= 1155
 NO_FISH_ATTACHED_Y 			:= 209
-NO_FISH_ATTACHED_COLOR 		:= 0x00ffff
 BAUBLE_DURATION 			:= 15 ;- minutes
 
 ; - character sheet, primary weapon slot (fishing pole icon)
@@ -11,17 +10,17 @@ CHAR_SHEET_PRIM_WEAPON_X := 240
 CHAR_SHEET_PRIM_WEAPON_Y := 849 
 
 ; - click grid settings
-CG_START_X			:= 700
-CG_START_Y			:= 300
-CG_WIDTH 			:= 15
-CG_HEIGHT 			:= 5
-CG_OFFSET_X 		:= 50
-CG_OFFSET_Y 		:= 50
+; CG_START_X			:= 700
+; CG_START_Y			:= 300
+; CG_WIDTH 			:= 15
+; CG_HEIGHT 			:= 5
+; CG_OFFSET_X 		:= 50
+; CG_OFFSET_Y 		:= 50
 
 ; - caught a fish and loot box is open
 LOOT_X 		:= 70
 LOOT_Y 		:= 200
-LOOT_COLOR 	:= 0x000000
+
 
 ; - Keybinds
 CAST_LINE_KEY  				:= "!^f" 	; alt+ctrl+f
@@ -34,11 +33,26 @@ BAUBLE_EVENT_TRIGGERED      := false
 BAUBLE_TIMER_COOLDOWN       := 16 ;- mins
 BAUBLE_APPLICATION_DONE     := false
 
+; - Bauble Bounding Boxes
+BAUBLE_BOX_X_OFFSET 		:= 100
+BAUBLE_BOX_Y_OFFSET 		:= 100
+
+; - COLOR MATCHING
+FISHING_LURE_MATCH_COLOR	:= 0x0E142D
+NO_FISH_ATTACHED_COLOR 		:= 0x00ffff
+LOOT_COLOR 					:= 0x000000
+FISH_ON_LURE_COLOR 			:= 0xFEFEFE
+
+
 ; ------------------------------------------------------------[ CastLine ]---
 ;
 CastLine() {
 	global	
 	Send %CAST_LINE_KEY%
+}
+
+CollectFoundFish() {
+	Send +{Click, right}
 }
 
 ;-----------------------------------------------------------[ ApplyBauble ]---
@@ -80,7 +94,7 @@ TestForColor(x, y, TargetColor) {
 }
 
 ; ---------------------------------------------------------[ RunClickGrid ]---
-;
+; - DEPRICATED
 RunClickGrid() {	
 	global 
 
@@ -110,8 +124,80 @@ RunClickGrid() {
 	}
 }
 
-;------------------------------------------------------------[ MainLoop ]---
+; --------------------------------------------------------[ LookForFishOnLure ]
+;- TODO: add timetout function
+;	 wait for fish to bite
+LookForFishOnLure(x,y) {
+	global
+	while true {
+
+		sx  := x-BAUBLE_BOX_X_OFFSET
+		sy  := y-BAUBLE_BOX_Y_OFFSET
+		dx  := x+BAUBLE_BOX_X_OFFSET
+		dy  := y+BAUBLE_BOX_Y_OFFSET
+
+		PixelSearch, fx, fy, sx, sy, dx, dy, FISH_ON_LURE_COLOR, 3, Fast
+		; if ErrorLevel = 2
+			; MsgBox, no found
+		; if ErrorLevel = 1
+			; MsgBox, no found
+		
+		if ( ErrorLevel = 0 ) {
+			Sleep, 500
+			CollectFoundFish()		
+			Sleep, 1000	
+			return
+		}
+
+		Sleep, 250
+
+		;- check timer callback flag for exit
+		; return
+	}
+}
+
+
+;----------------------------------------------------  [ LocateLureByPixel ]---
 ;
+LocateLureByPixel() {
+	global
+	
+	PixelSearch, x, y, 600,300,1650,650, FISHING_LURE_MATCH_COLOR, 10, Fast
+
+	 if ErrorLevel = 2
+	 	return error 2
+	 if ErrorLevel = 1
+	 	return error 1
+	if ErrorLevel = 0
+		return [x,y]
+}
+
+
+;---------------------------------------------------------[ LookForLure ]---
+;
+LookForLure(){
+
+	while true {
+		m  := LocateLureByPixel()
+
+		; MsgBox m:%m%
+		
+		if ( m ){
+			mx := m[1]
+			my := m[2]
+			MouseMove, %mx%, %my%					
+			LookForFishOnLure(mx,my)	
+			return
+		}			
+
+		;- timer ran out
+		;return				
+		Sleep, 250
+	}
+}
+
+;------------------------------------------------------------[ MainLoop ]---
+; TODO: add timetout function
 MainLoop() {
 	global
 	; start looping right clicks	
@@ -127,20 +213,33 @@ MainLoop() {
 		} else {
 			
 			CastLine()
-			Sleep, 1500	
-			RunClickGrid()
-			Sleep, 1000		
+			Sleep, 3000	
+
+			LookForLure()
+			Sleep, 1000
 		}
 
 		; don't ever stop trying!
 	}
 }
 
+
+
+MsgBoxPixelAtMouse(){
+	MouseGetPos, x, y
+	PixelGetColor, Color, x, y
+	MsgBox %Color%	
+}
+
+
+
 ; -----------------------------------------------------------[ KEY EVENTS ]---
 Esc::ExitApp
 
 ; ctrl+1
 ^1::
+	; MsgBoxPixelAtMouse()
+
 	; - equip fishing pole
 	Send %EQUIP_FISHING_POLE_KEY%
 	Sleep, 1000
@@ -153,6 +252,6 @@ Esc::ExitApp
 	SetTimer, ApplyBaubleTimerEventCallback, %Duration%
 	
 	; - start fishing
-	MainLoop()
+	MainLoop()	
 
 return
