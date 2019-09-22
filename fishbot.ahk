@@ -264,15 +264,15 @@ Esc::ExitApp
 	; MsgBoxPixelAtMouse()
 
 	; - equip fishing pole
-	; Send %EQUIP_FISHING_POLE_KEY%
-	; Sleep, 1000
+	Send %EQUIP_FISHING_POLE_KEY%
+	Sleep, 1000
 
 	; - apply first bauble
-	; ApplyBauble()
+	ApplyBauble()
 
 	; - set bauble refresh timer
-	; Duration := (1000*60*11)
-	; SetTimer, ApplyBaubleTimerEventCallback, %Duration%
+	Duration := (1000*60*11)
+	SetTimer, ApplyBaubleTimerEventCallback, %Duration%
 	
 	; - start fishing
 	MainLoop()	
