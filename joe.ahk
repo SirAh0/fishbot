@@ -153,7 +153,7 @@ LookForFishOnLure(x,y) {
 		dx  := x+BAUBLE_BOX_X_OFFSET
 		dy  := y+BAUBLE_BOX_Y_OFFSET
 
-		PixelSearch, fx, fy, sx, sy, dx, dy, FISH_ON_LURE_COLOR, 10, Fast
+		PixelSearch, fx, fy, sx, sy, dx, dy, FISH_ON_LURE_COLOR, 3, Fast
 		; if ErrorLevel = 2
 			; MsgBox, no found
 		; if ErrorLevel = 1
@@ -175,7 +175,7 @@ LookForFishOnLure(x,y) {
 LocateLureByPixel() {
 	global
 	
-	PixelSearch, x, y, 600,300,1650,650, FISHING_LURE_MATCH_COLOR, 20, Fast
+	PixelSearch, x, y, 600,300,1650,650, FISHING_LURE_MATCH_COLOR, 10, Fast
 
 	if ErrorLevel = 2
 		return 0
