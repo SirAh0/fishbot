@@ -1,6 +1,3 @@
-SendMode Input
-#NoEnv
-SetWorkingDir %A_ScriptDir%
 #SingleInstance,Force
 CoordMode, Pixel, Window
 CoordMode, Mouse, Window
