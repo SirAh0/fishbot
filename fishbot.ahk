@@ -5,6 +5,8 @@ CoordMode, Mouse, Window
 ; ======================================================[ SETTINGS / GLOBALS ]===
 ;
 ; - tried to catch a fish, nothing attached
+; - TODO: figure out dynamic ratio of error message screen position
+; - current assumption: 1440p
 NO_FISH_ATTACHED_X 			:= 1155
 NO_FISH_ATTACHED_Y 			:= 209
 BAUBLE_DURATION 			:= 15 ;- minutes
@@ -25,6 +27,9 @@ CHAR_SHEET_PRIM_WEAPON_Y := 849
 LOOT_X 		:= 70
 LOOT_Y 		:= 200
 
+; - found fish at 
+FOUND_LURE_X := 0
+FOUND_LURE_Y := 0
 
 ; - Keybinds
 CAST_LINE_KEY  				:= "!^f" 	; alt+ctrl+f
@@ -43,11 +48,12 @@ FIND_LURE_BOUNDING_BOX_DX   := 0
 FIND_LURE_BOUNDING_BOX_Y 	:= 0
 FIND_LURE_BOUNDING_BOX_DY   := 0
 
-BAUBLE_BOX_X_OFFSET 		:= 100
-BAUBLE_BOX_Y_OFFSET 		:= 100
+BAUBLE_BOX_X_OFFSET 		:= 200
+BAUBLE_BOX_Y_OFFSET 		:= 200
 
 ; - COLOR MATCHING
-COLOR_SEARCH_PIXEL_OFFSET	:= 10
+COLOR_SEARCH_PIXEL_RED_OFFSET	:= 15
+COLOR_SEARCH_PIXEL_WHITE_OFFSET	:= 5
 FISHING_LURE_MATCH_COLOR	:= 0x0E142D
 NO_FISH_ATTACHED_COLOR 		:= 0x00ffff
 LOOT_COLOR 					:= 0x000000
@@ -100,8 +106,7 @@ StopLookForLureTimer(){
 }
 
 LookForFishOnLureTimeoutEventCallback(){
-	global
-	LOOK_FOR_FISH_ON_LURE_TIMER_RUNNING = false
+	StopLookForFishOnLureTimer()
 }
 
 StartLookForFishOnLureTimer(){
@@ -134,7 +139,9 @@ EquipFishingPole(){
 }
 
 CollectFoundFish() {
-	Send +{Click, right}
+	global
+	MouseMove, %FOUND_LURE_X%, %FOUND_LURE_Y%
+	Send +{Click, right}	
 }
 
 ;-----------------------------------------------------------[ ApplyBauble ]---
@@ -205,12 +212,15 @@ RunClickGrid() {
 ; --------------------------------------------------------[ LookForFishOnLure ]
 ;- TODO: add timetout function
 ;	 wait for fish to bite
-LookForFishOnLure(x,y) {
+LookForFishOnLure() {
 	global
 
 	StartLookForFishOnLureTimer()
 
 	while LOOK_FOR_FISH_ON_LURE_TIMER_RUNNING {
+
+		x   := FOUND_LURE_X
+		y   := FOUND_LURE_Y
 
 		sx  := x-BAUBLE_BOX_X_OFFSET
 		sy  := y-BAUBLE_BOX_Y_OFFSET
@@ -218,12 +228,15 @@ LookForFishOnLure(x,y) {
 		dy  := y+BAUBLE_BOX_Y_OFFSET
 
 		
-		PixelSearch, fx, fy, sx, sy, dx, dy, FISH_ON_LURE_COLOR, COLOR_SEARCH_PIXEL_OFFSET, Fast
-		; if ErrorLevel = 2
-			; MsgBox, no found
-		; if ErrorLevel = 1
-			; MsgBox, no found
+		PixelSearch, fx, fy, sx, sy, dx, dy, FISH_ON_LURE_COLOR, COLOR_SEARCH_PIXEL_WHITE_OFFSET, Fast
 		
+		;- didn't find anything, wait
+		if ErrorLevel = 2
+			Sleep, 250
+		if ErrorLevel = 1
+			Sleep, 250
+		
+		;- found fish, collect 
 		if ( ErrorLevel = 0 ) {
 			Sleep, 500
 			CollectFoundFish()
@@ -231,9 +244,6 @@ LookForFishOnLure(x,y) {
 			
 			; - fish found, stop looking for it
 			StopLookForFishOnLureTimer()
-			
-			; - let the bot breath (maybe not needed)
-			Sleep, 1500	
 			return
 		}		
 	}
@@ -251,7 +261,7 @@ LocateLureByPixel() {
 	dx  := FIND_LURE_BOUNDING_BOX_DX
 	dy  := FIND_LURE_BOUNDING_BOX_DY
 
-	PixelSearch, x, y, sx, sy, dx, dy, FISHING_LURE_MATCH_COLOR, COLOR_SEARCH_PIXEL_OFFSET, Fast	
+	PixelSearch, x, y, sx, sy, dx, dy, FISHING_LURE_MATCH_COLOR, COLOR_SEARCH_PIXEL_RED_OFFSET, Fast	
 
 	if ErrorLevel = 2
 		return 0
@@ -279,9 +289,13 @@ LookForLure(){
 			mx := m[1]
 			my := m[2]			
 			
-			MouseMove, %mx%, %my%			
+			; MouseMove, %mx%, %my%
+			FOUND_LURE_X := mx
+			FOUND_LURE_Y := my 
+
 			StopLookForLureTimer()
-			LookForFishOnLure(mx,my)						
+			LookForFishOnLure()	
+			; MsgBox, Stopped LookForFishOnLure					
 			return
 		}			
 
@@ -305,12 +319,22 @@ MainLoop() {
 			; ApplyBauble()	
 			
 		; } else {
-			
-			CastLine()
+			; if ( WinExist(APP_WINDOW_NAME) ) {
+				; WinActivate
+				; - clear any old timers
+				StopLookForFishOnLureTimer()
+				StopLookForLureTimer()
 
+				; - cast line
+				CastLine()
 
-			LookForLure()			
-			Sleep, 1000
+				; - look for lure
+				LookForLure()			
+				Sleep, 1000
+
+				;- move mouse back to top corner
+				MouseMove, 0, 0
+			; }
 		; }
 
 		; don't ever stop trying!
