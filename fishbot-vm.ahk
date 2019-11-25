@@ -1,5 +1,74 @@
+﻿#SingleInstance,Force
 CoordMode, Pixel, Window
 CoordMode, Mouse, Window
+
+; ======================================================[ SETTINGS / GLOBALS ]===
+;
+; - tried to catch a fish, nothing attached
+; - TODO: figure out dynamic ratio of error message screen position
+; - current assumption: 1440p
+NO_FISH_ATTACHED_X 			:= 1155
+NO_FISH_ATTACHED_Y 			:= 209
+BAUBLE_DURATION 			:= 15 ;- minutes
+
+; - character sheet, primary weapon slot (fishing pole icon)
+CHAR_SHEET_PRIM_WEAPON_X := 240
+CHAR_SHEET_PRIM_WEAPON_Y := 849 
+
+; - click grid settings
+; CG_START_X			:= 700
+; CG_START_Y			:= 300
+; CG_WIDTH 			:= 15
+; CG_HEIGHT 			:= 5
+; CG_OFFSET_X 		:= 50
+; CG_OFFSET_Y 		:= 50
+
+; - caught a fish and loot box is open
+LOOT_X 		:= 70
+LOOT_Y 		:= 200
+
+; - found fish at 
+FOUND_LURE_X := 0
+FOUND_LURE_Y := 0
+
+; - Keybinds
+CAST_LINE_KEY  				:= "!^f" 	; alt+ctrl+f
+EQUIP_FISHING_POLE_KEY		:= "!f"   	; alt+f
+APPLY_BAUBLE_KEY  			:= "^f"	  	; ctrl+f
+OPEN_CHARACTER_SHEET_KEY    := "^c"   	; ctrl+c
+
+; - Buable Flag
+BAUBLE_EVENT_TRIGGERED      := false
+BAUBLE_TIMER_COOLDOWN       := 16 ;- mins
+BAUBLE_APPLICATION_DONE     := false
+
+; - Bauble Bounding Boxes
+FIND_LURE_BOUNDING_BOX_X 	:= 0
+FIND_LURE_BOUNDING_BOX_DX   := 0
+FIND_LURE_BOUNDING_BOX_Y 	:= 0
+FIND_LURE_BOUNDING_BOX_DY   := 0
+
+BAUBLE_BOX_X_OFFSET 		:= 200
+BAUBLE_BOX_Y_OFFSET 		:= 100
+
+; - COLOR MATCHING
+COLOR_SEARCH_PIXEL_RED_OFFSET	:= 15
+COLOR_SEARCH_PIXEL_WHITE_OFFSET	:= 5
+FISHING_LURE_MATCH_COLOR	:= 0x182751
+NO_FISH_ATTACHED_COLOR 		:= 0x00ffff
+LOOT_COLOR 					:= 0x000000
+FISH_ON_LURE_COLOR 			:= 0xFFFFFF
+
+; - looking for fish timers
+LOOK_FOR_LURE_DURATION 		  		:= 30 ;- seconds
+LOOK_FOR_FISH_ON_LURE_DURATION 		:= 30 ;- seconds
+LOOK_FOR_LURE_TIMER_RUNNING	    	:= false
+LOOK_FOR_FISH_ON_LURE_TIMER_RUNNING := false
+
+; - window info
+APP_WINDOW_WIDTH 					:= 0
+APP_WINDOW_HEIGHT 					:= 0
+APP_WINDOW_NAME 					:= "World of Warcraft"
 
 ; ============================================================================
 ; ===============================================================[ EVENTS ]===
@@ -55,12 +124,10 @@ StopLookForFishOnLureTimer(){
 }
 ; ============================================================================
 
-
-
 ; ------------------------------------------------------------[ CastLine ]---
 ;
 CastLine() {
-	global		
+	global	
 	Send %CAST_LINE_KEY%
 	Sleep, 3000 	;- give the animation time to finish	
 }
@@ -152,8 +219,6 @@ LookForFishOnLure() {
 
 	while LOOK_FOR_FISH_ON_LURE_TIMER_RUNNING {
 
-		if ( !RUN_LOOP ) return
-
 		x   := FOUND_LURE_X
 		y   := FOUND_LURE_Y
 
@@ -172,15 +237,14 @@ LookForFishOnLure() {
 			Sleep, 250
 		
 		;- found fish, collect 
-		if ( ErrorLevel = 0 ) {
-			Sleep, 500
+		if ( ErrorLevel = 0 ) {			
 			CollectFoundFish()
-			Sleep, 1000
+			Sleep, 1500
 			
 			; - fish found, stop looking for it
 			StopLookForFishOnLureTimer()
 			return
-		}		
+		}				
 	}
 }
 
@@ -218,19 +282,15 @@ LookForLure(){
 
 	while LOOK_FOR_LURE_TIMER_RUNNING {			
 		
-		if ( !RUN_LOOP ) return
-
 		; - try to find the lure
 		m  := LocateLureByPixel() 
 		if ( m ){			
 			mx := m[1]
 			my := m[2]			
 			
-			MouseMove, %mx%, %my%
+			; MouseMove, %mx%, %my%
 			FOUND_LURE_X := mx
 			FOUND_LURE_Y := my 
-
-
 
 			StopLookForLureTimer()
 			LookForFishOnLure()	
@@ -244,11 +304,11 @@ LookForLure(){
 
 
 ;------------------------------------------------------------[ MainLoop ]---
-; TODO: add timetout function
+; 
 MainLoop() {
 	global
 	; start looping right clicks	
-	while RUN_LOOP {
+	while true {
 		
 		; if ( BAUBLE_EVENT_TRIGGERED ){			
 			; - clear the flag, only run this once
@@ -265,18 +325,14 @@ MainLoop() {
 				StopLookForLureTimer()
 
 				; - cast line
-				if ( RUN_LOOP )
-					CastLine()
+				CastLine()
 
 				; - look for lure
-				if ( RUN_LOOP ){
-					LookForLure()			
-					Sleep, 1000
-				}
-				
+				LookForLure()			
+				Sleep, 1000
 
 				;- move mouse back to top corner
-				; MouseMove, 0, 0
+				MouseMove, 0, 0
 			; }
 		; }
 
@@ -299,7 +355,7 @@ SetFishingBoundingBox(){
 	WinGetPos, x, y, w, h, %APP_WINDOW_NAME%
 	FIND_LURE_BOUNDING_BOX_X 	:= w * 0.25
 	FIND_LURE_BOUNDING_BOX_DX	:= FIND_LURE_BOUNDING_BOX_X + (w * 0.50)
-	FIND_LURE_BOUNDING_BOX_Y 	:= h * 0.20
+	FIND_LURE_BOUNDING_BOX_Y 	:= h * 0.10
 	FIND_LURE_BOUNDING_BOX_DY	:= FIND_LURE_BOUNDING_BOX_Y + (h * 0.25)
 }
 
@@ -334,30 +390,20 @@ PreFishSetup(){
 }
 
 ; -----------------------------------------------------------[ KEY EVENTS ]---
-^Esc::ExitApp
+Esc::ExitApp
 
-StartFishing(){
-	global	
+; ctrl+1
+^1::	
+	
+	; MsgBoxPixelAtMouse()
+ 
 	;- find the app and activate it
-	; if WinExist(APP_WINDOW_NAME) {		
-		; MsgBox, fishin
-		RUN_LOOP := true
+
+	if WinExist(APP_WINDOW_NAME) {		
 		; - get things ready
 		PreFishSetup()		
 
 		; - letsa goooo
 		MainLoop()			
-	; }
-}
-
-StopFishing(){
-	global
-	RUN_LOOP := false
-	StopLookForLureTimer()
-	StopLookForFishOnLureTimer()	
-}
-
-; ctrl+3
-; ^3::	
-	; StartFishing()
-; return
+	}
+return
